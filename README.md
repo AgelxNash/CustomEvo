@@ -20,33 +20,13 @@ foreach($q as $item){
 
 4) Добавляем уникальный индекс колонке uri в таблице site_content
 
-5) Добавляем плагин на события OnDocDuplicate и OnDocFormSave
+5) Добавляем плагин на события OnDocDuplicate, OnBeforeDocFormSave и OnDocFormSave
+
 ```php
-switch($modx->Event->name){
-	case 'OnDocDuplicate':{
-		$idSQL = isset($new_id) ? (int)$new_id : 0;
-		break;
-	}
-	case 'OnDocFormSave':{
-		$idSQL = isset($id) ? (int)$id : 0;
-		break;
-	}
-	default:{
-		$idSQL = 0;
-	}
-}
-if($idSQL>0){
-	$table = $modx->getFullTableName("site_content");
-	$q = $modx->db->query("SELECT parent FROM ".$table." WHERE id={$idSQL}");
-	if($modx->db->getRecordCount($q)==1){
-		$q = $modx->db->getRow($q);
-		if($q['parent']){
-			$modx->db->update(array('uri'=>$modx->makeUrl($q['parent'])),$table,'id='.$q['parent']);
-		}
-		$modx->db->update(array('uri'=>$modx->makeUrl($idSQL)),$table,'id='.$idSQL);
-	}
-}
+require MODX_BASE_PATH .'assets/plugins/makeuri/makeuri.plugin.php';
 ```
+Не забываем разместить папку makeuri с плагином из архива в папку assets/plugins
+
 
 6) Проверяем порядок вызова плагинов и убеждаемся, что наш плагин запускается последним
 
@@ -78,6 +58,14 @@ class synccache{
 class synccacheOriginal{
 ```
 
-11) Отчищаем кеш
+11) Добавляем в начало файла manager/processors/move_document.processor.php строку
 
-12) Добавляем 3 индекса unpub_date, pub_date, menuindex в таблицу site_content
+```php
+include_once(dirname(dirname(__FILE__)) . '/custom/processors/move_document.processor.php');
+exit();
+```
+
+
+12) Отчищаем кеш
+
+13) Добавляем 3 индекса unpub_date, pub_date, menuindex в таблицу site_content
