@@ -331,27 +331,23 @@ class DocumentParser extends DocumentParserOriginal{
         }
     }
 
-    function getChildIds($id, $depth= 10, $children= array ()) {
-        if(empty($this->documentMap)){
-            $this->_loadChildIds(0);
+    function getChildIds($ids, $depth= 10, $children= array ()) {
+        $res = $this->db->select("id,alias,uri,isfolder", $this->getFullTableName('site_content'),  "parent IN (".$ids.") AND deleted = '0'");
+        $idx = array();
+        while( $row = $this->db->getRow( $res ) ) {
+            $children[$row['alias']] = $row['id'];
+            if ($row['isfolder']==1) $idx[] = $row['id'];
         }
-        // Get all the children for this parent node
-        if (isset($this->documentMap[$id])) {
-            $depth--;
-
-            foreach ($$this->documentMap[$id] as $childId) {
-				$tmp=$this->getAliasListing($childId);
-                $pkey = (strlen($tmp['path']) ? "{$tmp['path']}/" : '') . $tmp['alias'];
-                if (!strlen($pkey)) $pkey = "{$childId}";
-                $children[$pkey] = $childId;
-
-                if ($depth) {
-                    $children += $this->getChildIds($childId, $depth);
-                }
+        $depth--;
+        $idx = implode(',',$idx);
+        if (!empty($idx)) {
+            if ($depth) {
+                $children = $this->getChildIds($idx, $depth, $children );
             }
         }
         return $children;
     }
+    
     function makeUrl($id, $alias= '', $args= '', $scheme= '') {
         $url= '';
         $virtualDir= '';
